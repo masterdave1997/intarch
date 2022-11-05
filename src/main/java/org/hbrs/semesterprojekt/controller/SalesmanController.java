@@ -1,33 +1,66 @@
 package org.hbrs.semesterprojekt.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hbrs.semesterprojekt.entities.PerformanceRecord;
 import org.hbrs.semesterprojekt.entities.Salesman;
+import org.hbrs.semesterprojekt.repository.PerformanceRecordRepository;
 import org.hbrs.semesterprojekt.repository.SalesmanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
 public class SalesmanController {
 
     private final SalesmanRepository salesmanRepository;
+    private final PerformanceRecordRepository recordRepository;
 
     @Autowired
-    public SalesmanController(SalesmanRepository salesmanRepository) {
+    public SalesmanController(SalesmanRepository salesmanRepository, PerformanceRecordRepository recordRepository) {
         this.salesmanRepository = salesmanRepository;
+        this.recordRepository = recordRepository;
     }
 
     @GetMapping("/salesmen/{id}")
-    public String read(@PathVariable String id) {
-        Salesman s = salesmanRepository.findById(id).orElse(null);
+    public String read(@PathVariable String id) throws JsonProcessingException {
+        Salesman s = this.salesmanRepository.findById(id).orElse(null);
 
-        return s != null ? s.toString() : "404 - Not Found";
+        if(s != null) {
+            HashMap<String, Object> map = new HashMap<>();
+            map.put("id", s.getId());
+            map.put("firstname", s.getFirstname());
+            map.put("lastname", s.getLastname());
+            map.put("performanceRecords", this.recordRepository.findAllBySid(s.getId()));
+
+            return new ObjectMapper().writeValueAsString(map);
+        }
+
+        return null;
     }
 
     @GetMapping("/salesmen")
-    public List<Salesman> readAll() {
-        return salesmanRepository.findAll();
+    public List<String> readAll() {
+        List<Salesman> salesmen = this.salesmanRepository.findAll();
+
+        List<String> res = new ArrayList<>();
+        salesmen.forEach(s -> {
+            HashMap<String, Object> map = new HashMap<>();
+            map.put("id", s.getId());
+            map.put("firstname", s.getFirstname());
+            map.put("lastname", s.getLastname());
+            map.put("performanceRecords", this.recordRepository.findAllBySid(s.getId()));
+
+            try {
+                res.add(new ObjectMapper().writeValueAsString(map));
+            } catch (JsonProcessingException ignored) {}
+        });
+
+        return res;
     }
 
     @PostMapping("/salesmen")
@@ -49,5 +82,21 @@ public class SalesmanController {
     @DeleteMapping("/salesmen/{id}")
     public void delete(@PathVariable String id) {
         this.salesmanRepository.deleteById(id);
+    }
+
+    @PostMapping("/records")
+    public String create(@RequestBody PerformanceRecord performanceRecord, HttpServletResponse response) {
+        PerformanceRecord p = this.recordRepository.save(performanceRecord);
+
+        response.setStatus(HttpServletResponse.SC_CREATED);
+
+        return "/salesmen/" + p.sid();
+    }
+
+    @PutMapping("records")
+    public String update(@RequestBody String sid, @RequestBody PerformanceRecord performanceRecord) {
+        PerformanceRecord p = this.recordRepository.save(performanceRecord);
+
+        return "/salesmen/" + p.sid();
     }
 }
