@@ -8,16 +8,19 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="semesterprojekt" />
+        <module name="mongodbstart" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="MongoDB_Demo" target="19" />
+      <module name="mongodbstart" target="18" />
       <module name="semesterprojekt" target="18" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="MongoDBStart" options="-parameters" />
+      <module name="mongodbstart" options="-parameters" />
       <module name="semesterprojekt" options="-parameters" />
     </option>
   </component>
